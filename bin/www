@@ -1,10 +1,11 @@
 #!/usr/bin/env node
+const log = require('logger').createLogger('START_SCRIPT');
+const { preInit } = require('utils/preInit');
 
 /**
  * Module dependencies.
  */
 
-const app = require('../app');
 const debug = require('debug')('parkovki:server');
 const http = require('http');
 
@@ -44,11 +45,11 @@ function onError(error) {
     // handle specific listen errors with friendly messages
   switch (error.code) {
     case 'EACCES':
-      console.error(`${bind} requires elevated privileges`);
+      log.error(`${bind} requires elevated privileges`);
       process.exit(1);
       break;
     case 'EADDRINUSE':
-      console.error(`${bind} is already in use`);
+      log.error(`${bind} is already in use`);
       process.exit(1);
       break;
     default:
@@ -60,12 +61,12 @@ function onError(error) {
  * Event listener for HTTP server "listening" event.
  */
 
-function onListening() {
+function onListening(server) {
   const addr = server.address();
   const bind = typeof addr === 'string'
     ? `pipe ${addr}`
     : `port ${addr.port}`;
-  debug(`Listening on ${bind}`);
+  log.debug(`Listening on ${bind}`);
 }
 
 /**
@@ -73,19 +74,26 @@ function onListening() {
  */
 
 const port = normalizePort(process.env.PORT || '3000');
-app.set('port', port);
 
-/**
- * Create HTTP server.
- */
+(async () => {
+  try {
+    await preInit();
 
-const server = http.createServer(app);
+    const app = require('app');
+    app.set('port', port);
 
-/**
- * Listen on provided port, on all network interfaces.
- */
+    /**
+     * Create HTTP server.
+     */
 
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
+    const server = http.createServer(app);
+
+    // TODO Add listeners
+    server.listen(port);
+  } catch (err) {
+      console.dir(err); // TODO Remove this console
+    log.error('Error_initing_db_last', err.message || 'unknown error');
+    process.exit(1);
+  }
+})();
 
