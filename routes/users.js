@@ -1,6 +1,6 @@
 const express = require('express');
 const log = require('logger').createLogger('ROUTER_USER');
-const { insertNewUser } = require('handlers/users');
+const { insertNewUser, updateUser } = require('handlers/users');
 
 const router = express.Router();
 
@@ -11,6 +11,17 @@ router.post('/', async (req, res, next) => {
     res.send(newUser);
   } catch (err) {
     log.error('Error_user_post_last', err.message);
+    next(err);
+  }
+});
+
+router.put('/:id', async (req, res, next) => {
+  try {
+    const wasUpdated = await updateUser(req.params.id, req.body);
+
+    res.send({ status: 'ok', wasUpdated });
+  } catch (err) {
+    log.error('Error_user_put_last', err.message);
     next(err);
   }
 });
