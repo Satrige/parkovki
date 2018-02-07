@@ -24,7 +24,6 @@ const UserSchema = mongoose.Schema({
 UserSchema.methods.toJSON = function () {
   const userInfo = this.toObject();
   delete userInfo.isDeleted;
-  delete userInfo.password;
   delete userInfo.__v;
 
   return userInfo;
@@ -41,8 +40,7 @@ const saveNewUser = async (userInfo) => {
     log.debug('Debug_saveNewUser_0', newUser);
 
     return newUser;
-  }
-  catch (err) {
+  } catch (err) {
     log.error('Error_saveNewUser_0', err.message, userInfo);
 
     throw new Error('Cant save user');

@@ -91,7 +91,6 @@ const port = normalizePort(process.env.PORT || '3000');
     // TODO Add listeners
     server.listen(port);
   } catch (err) {
-      console.dir(err); // TODO Remove this console
     log.error('Error_initing_db_last', err.message || 'unknown error');
     process.exit(1);
   }

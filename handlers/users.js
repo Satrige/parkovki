@@ -44,25 +44,24 @@ const updateUser = async (userId, userInfo) => {
   }
 };
 
-const findUser = async (userId) => {
-  if (!userId) {
+const findUser = async (query) => {
+  if (!query) {
     log.warn('Warn_findUser_0', 'Wrong params');
     throw new Error('Wrong params');
   }
 
   try {
-    const user = await userModel.getUser({ _id: userId, isDeleted: false });
+    const user = await userModel.getUser({ ...query, isDeleted: false });
 
     log.debug('Debug_findUser_0', user);
 
     if (!user) {
-      log.warn('Warn_findUser_0', 'No user with such id: ', userId)
-      throw new Error('No such user');
+      log.warn('Warn_findUser_0', 'No user with such query: ', query);
     }
 
     return user;
   } catch (err) {
-    log.error('Error_findUser_0', err.message, userId);
+    log.error('Error_findUser_0', err.message, query);
 
     throw err;
   }

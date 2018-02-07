@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 
 const index = require('routes/index');
 const users = require('routes/users');
+const calendar = require('routes/calendar');
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(cookieParser());
 
 app.use('/', index);
 app.use('/users/', users);
+app.use('/calendar/', calendar);
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
@@ -33,7 +35,7 @@ app.use((err, req, res, next) => {
 
   // render the error page
   res.status(err.status || 500)
-    .send({ message: 'Error occured' });
+    .send({ message: err.message || 'Error occured' });
 });
 
 module.exports = app;
