@@ -23,7 +23,7 @@ const UserSchema = mongoose.Schema({
 
 UserSchema.methods.toJSON = function () {
   const userInfo = this.toObject();
-  delete userInfo.isAdmin;
+  delete userInfo.isDeleted;
   delete userInfo.password;
   delete userInfo.__v;
 

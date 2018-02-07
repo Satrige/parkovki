@@ -1,6 +1,6 @@
 const express = require('express');
 const log = require('logger').createLogger('ROUTER_USER');
-const { insertNewUser, updateUser } = require('handlers/users');
+const { insertNewUser, updateUser, findUser } = require('handlers/users');
 
 const router = express.Router();
 
@@ -33,6 +33,17 @@ router.delete('/:id', async (req, res, next) => {
     res.send({ status: 'ok', wasDeleted });
   } catch (err) {
     log.error('Error_user_delete_last', err.message);
+    next(err);
+  }
+});
+
+router.get('/:id', async (req, res, next) => {
+  try {
+    const user = await findUser(req.params.id);
+
+    res.send(user);
+  } catch (err) {
+    log.error('Error_user_get_last', err.message);
     next(err);
   }
 });
