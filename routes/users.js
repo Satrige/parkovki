@@ -26,4 +26,15 @@ router.put('/:id', async (req, res, next) => {
   }
 });
 
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const wasDeleted = await updateUser(req.params.id, { isDeleted: true });
+
+    res.send({ status: 'ok', wasDeleted });
+  } catch (err) {
+    log.error('Error_user_delete_last', err.message);
+    next(err);
+  }
+});
+
 module.exports = router;
