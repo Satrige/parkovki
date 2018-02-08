@@ -77,8 +77,26 @@ const getRecord = async (query) => {
   }
 };
 
+const updateRecord = async (recordId, recordInfo) => {
+  if (!recordId || !recordInfo) {
+    log.warn('Warn_updateRecord_0', 'Wrong params', recordId, recordInfo);
+    throw WRONG_PARAMS;
+  }
+
+  try {
+    const wasUpdated = await calendarModel.updateRecord({ _id: recordId }, recordInfo);
+
+    return wasUpdated;
+  } catch (err) {
+    log.error('Error_updateRecord_last', err.message, recordId, recordInfo);
+
+    throw err;
+  }
+};
+
 module.exports = {
   insertNewRecord,
   getRecord,
+  updateRecord,
 };
 

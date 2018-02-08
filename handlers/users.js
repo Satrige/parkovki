@@ -32,10 +32,7 @@ const updateUser = async (userId, userInfo) => {
   }
 
   try {
-    const wasUpdated = await userModel.updateUser({
-      _id: userId,
-      isDeleted: false,
-    }, userInfo);
+    const wasUpdated = await userModel.updateUser({ _id: userId }, userInfo);
 
     return wasUpdated;
   } catch (err) {

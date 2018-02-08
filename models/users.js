@@ -50,7 +50,7 @@ const saveNewUser = async (userInfo) => {
 
 const updateUser = async (query, newInfo) => {
   try {
-    const updateResp = await User.update(query, newInfo);
+    const updateResp = await User.update({ ...query, isDeleted: false }, newInfo);
 
     log.debug('Debug_updateUser_0', 'Result of user update: ', updateResp, query, newInfo);
 

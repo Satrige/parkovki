@@ -1,7 +1,7 @@
 const mongoose = require('storages/mongo').getDb();
 const log = require('logger').createLogger('MODEL_CALENDAR');
 const { WORK_HOURS } = require('consts');
-const { CANT_SAVE_NEW_RECORD, CANT_GET_SINGLE_USER_STAT } = require('errors');
+const { CANT_SAVE_NEW_RECORD, CANT_GET_SINGLE_USER_STAT, CANT_UPDATE_RECORD } = require('errors');
 const { getIn } = require('common');
 
 const CalendarSchema = mongoose.Schema({
@@ -87,9 +87,24 @@ const getSingleUserStat = async (query) => {
 
 const getSingleRecord = query => Calendar.findOne({ ...query, isDeleted: false });
 
+const updateRecord = async (query, newInfo) => {
+  try {
+    const updateResp = await Calendar.update({ ...query, isDeleted: false }, newInfo);
+
+    log.debug('Debug_updateRecord_0', 'Result of record update: ', updateResp, query, newInfo);
+
+    return updateResp.n === 1;
+  } catch (err) {
+    log.error('Error_saveNewRecord_last', err.message, query, newInfo);
+
+    throw CANT_UPDATE_RECORD;
+  }
+};
+
 module.exports = {
   saveNewRecord,
   getSingleUserStat,
   getSingleRecord,
+  updateRecord,
   Calendar,
 };
