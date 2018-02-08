@@ -85,8 +85,11 @@ const getSingleUserStat = async (query) => {
   }
 };
 
+const getSingleRecord = query => Calendar.findOne({ ...query, isDeleted: false });
+
 module.exports = {
   saveNewRecord,
   getSingleUserStat,
+  getSingleRecord,
   Calendar,
 };

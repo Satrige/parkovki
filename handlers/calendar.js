@@ -7,6 +7,7 @@ const {
   NO_SUCH_USER,
   WRONG_PERIOD,
   CANT_ADD_RECORD,
+  NO_SUCH_RECORD,
 } = require('errors');
 
 const insertNewRecord = async (recordInfo) => {
@@ -50,7 +51,34 @@ const insertNewRecord = async (recordInfo) => {
   }
 };
 
+const getRecord = async (query) => {
+  if (!query) {
+    log.warn('Warn_getRecord_0', 'Wrong params');
+
+    throw WRONG_PARAMS;
+  }
+
+  try {
+    const record = await calendarModel.getSingleRecord(query);
+
+    log.debug('Debug_getRecord_0', query, record);
+
+    if (!record) {
+      log.warn('Warn_getRecord_0', 'No such record: ', query);
+
+      throw NO_SUCH_RECORD;
+    }
+
+    return record;
+  } catch (err) {
+    log.error('Error_getRecord_last', err.message, query);
+
+    throw err;
+  }
+};
+
 module.exports = {
   insertNewRecord,
+  getRecord,
 };
 

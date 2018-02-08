@@ -1,6 +1,6 @@
 const log = require('logger').createLogger('HANDLERS_USERS');
 const userModel = require('models/users');
-const { CANT_ADD_USER, WRONG_PARAMS } = require('errors');
+const { CANT_ADD_USER, WRONG_PARAMS, NO_SUCH_USER } = require('errors');
 
 const insertNewUser = async (userInfo) => {
   if (!userInfo) {
@@ -58,6 +58,8 @@ const findUser = async (query) => {
 
     if (!user) {
       log.warn('Warn_findUser_0', 'No user with such query: ', query);
+
+      throw NO_SUCH_USER;
     }
 
     return user;

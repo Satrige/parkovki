@@ -33,10 +33,7 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   const customError = handleMiddlewareErrors(err);
   res.status(customError.status)
-    .json({
-      status: 'err',
-      errorCode: customError.message,
-    });
+    .json({ message: customError.message });
 });
 
 module.exports = app;

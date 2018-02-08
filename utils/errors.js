@@ -30,6 +30,7 @@ const WRONG_PERIOD = new CustomError('Wrong working period', 400);
 const CANT_ADD_RECORD = new CustomError('Cant add new record to db', 400);
 const CANT_SAVE_NEW_RECORD = new CustomError('Cant save new record', 500);
 const CANT_GET_SINGLE_USER_STAT = new CustomError('Cant retrieve hours info', 500);
+const NO_SUCH_RECORD = new CustomError('No such record', 404);
 
 const handleMiddlewareErrors = (error) => {
   if (error.isCustom) {
@@ -51,5 +52,6 @@ module.exports = {
   CANT_ADD_RECORD,
   CANT_SAVE_NEW_RECORD,
   CANT_GET_SINGLE_USER_STAT,
+  NO_SUCH_RECORD,
   handleMiddlewareErrors,
 };
