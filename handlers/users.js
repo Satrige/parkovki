@@ -1,19 +1,20 @@
 const log = require('logger').createLogger('HANDLERS_USERS');
 const userModel = require('models/users');
+const { CANT_ADD_USER, WRONG_PARAMS } = require('errors');
 
 const insertNewUser = async (userInfo) => {
   if (!userInfo) {
     // TODO Add validation
     log.warn('Warn_insertNewUser_0', 'Wrong params');
 
-    throw new Error('Wrong params');
+    throw WRONG_PARAMS;
   }
 
   try {
     const newUser = await userModel.saveNewUser(userInfo);
 
     if (!newUser) {
-      throw new Error('Cant add new user to db');
+      throw CANT_ADD_USER;
     }
 
     return newUser;
@@ -27,7 +28,7 @@ const insertNewUser = async (userInfo) => {
 const updateUser = async (userId, userInfo) => {
   if (!userId || !userInfo) {
     log.warn('Warn_updateUser_0', 'Wrong params', userId, userInfo);
-    throw new Error('Wrong params');
+    throw WRONG_PARAMS;
   }
 
   try {
@@ -47,7 +48,7 @@ const updateUser = async (userId, userInfo) => {
 const findUser = async (query) => {
   if (!query) {
     log.warn('Warn_findUser_0', 'Wrong params');
-    throw new Error('Wrong params');
+    throw WRONG_PARAMS;
   }
 
   try {

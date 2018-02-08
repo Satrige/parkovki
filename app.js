@@ -4,6 +4,8 @@ const logger = require('morgan');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 
+const { handleMiddlewareErrors } = require('errors');
+
 const index = require('routes/index');
 const users = require('routes/users');
 const calendar = require('routes/calendar');
@@ -29,13 +31,12 @@ app.use((req, res, next) => {
 
 // error handler
 app.use((err, req, res, next) => {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500)
-    .send({ message: err.message || 'Error occured' });
+  const customError = handleMiddlewareErrors(err);
+  res.status(customError.status)
+    .json({
+      status: 'err',
+      errorCode: customError.message,
+    });
 });
 
 module.exports = app;

@@ -2,13 +2,19 @@ const log = require('logger').createLogger('HANDLERS_CALENDAR');
 const calendarModel = require('models/calendar');
 const { findUser } = require('handlers/users');
 const { WORK_HOURS } = require('consts');
+const {
+  WRONG_PARAMS,
+  NO_SUCH_USER,
+  WRONG_PERIOD,
+  CANT_ADD_RECORD,
+} = require('errors');
 
 const insertNewRecord = async (recordInfo) => {
   if (!recordInfo) {
     // TODO Add validation
     log.warn('Warn_insertNewRecord_0', 'Wrong params');
 
-    throw new Error('Wrong params');
+    throw WRONG_PARAMS;
   }
 
   try {
@@ -16,7 +22,7 @@ const insertNewRecord = async (recordInfo) => {
 
     if (!user) {
       log.warn('Warn_insertNewRecord_0', 'No user with such email: ', recordInfo);
-      throw new Error('No such user');
+      throw NO_SUCH_USER;
     }
 
     const workedHours = await calendarModel.getSingleUserStat({
@@ -25,20 +31,20 @@ const insertNewRecord = async (recordInfo) => {
     });
 
     if (workedHours + (recordInfo.period || 8) > WORK_HOURS) {
-      log.warn('Warn_insertNewRecord_1', 'Too much work time: ', recordInfo);
+      log.warn('Warn_insertNewRecord_1', 'Too much work time: ', workedHours, recordInfo);
 
-      throw new Error('Wrong working period');
+      throw WRONG_PERIOD;
     }
 
     const newRecord = await calendarModel.saveNewRecord(recordInfo);
 
     if (!newRecord) {
-      throw new Error('Cant add new record to db');
+      throw CANT_ADD_RECORD;
     }
 
     return newRecord;
   } catch (err) {
-    log.error('Error_insertNewRecord_last', err.message);
+    log.error('Error_insertNewRecord_last', err.message, recordInfo);
 
     throw err;
   }

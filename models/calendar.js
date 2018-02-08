@@ -1,6 +1,8 @@
 const mongoose = require('storages/mongo').getDb();
 const log = require('logger').createLogger('MODEL_CALENDAR');
 const { WORK_HOURS } = require('consts');
+const { CANT_SAVE_NEW_RECORD, CANT_GET_SINGLE_USER_STAT } = require('errors');
+const { getIn } = require('common');
 
 const CalendarSchema = mongoose.Schema({
   email: {
@@ -60,7 +62,7 @@ const saveNewRecord = async (recordInfo) => {
   } catch (err) {
     log.error('Error_saveNewRecord_0', err.message, recordInfo);
 
-    throw new Error('Cant save record');
+    throw CANT_SAVE_NEW_RECORD;
   }
 };
 
@@ -68,7 +70,7 @@ const getSingleUserStat = async (query) => {
   try {
     const statInfo = await Calendar
       .aggregate([{
-        $match: query,
+        $match: { ...query, isDeleted: false },
       }, {
         $group: {
           _id: '$email',
@@ -76,14 +78,10 @@ const getSingleUserStat = async (query) => {
         },
       }]);
 
-    if (statInfo && Array.isArray(statInfo) && statInfo.length) {
-      return statInfo[0].hours;
-    }
-
-    return 0;
+    return getIn(statInfo, [0, 'hours']) || 0;
   } catch (err) {
     log.error('Error_getSingleUserStat_0', err.message, query);
-    throw err;
+    throw CANT_GET_SINGLE_USER_STAT;
   }
 };
 

@@ -1,5 +1,6 @@
 const mongoose = require('storages/mongo').getDb();
 const log = require('logger').createLogger('MODEL_USERS');
+const { CANT_SAVE_USER, CANT_UPDATE_USER } = require('errors');
 
 const UserSchema = mongoose.Schema({
   name: String,
@@ -43,7 +44,7 @@ const saveNewUser = async (userInfo) => {
   } catch (err) {
     log.error('Error_saveNewUser_0', err.message, userInfo);
 
-    throw new Error('Cant save user');
+    throw CANT_SAVE_USER;
   }
 };
 
@@ -57,7 +58,7 @@ const updateUser = async (query, newInfo) => {
   } catch (err) {
     log.error('Error_saveNewUser_0', err.message, query, newInfo);
 
-    throw new Error('Cant update user');
+    throw CANT_UPDATE_USER;
   }
 };
 
