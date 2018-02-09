@@ -1,6 +1,7 @@
 const express = require('express');
 const log = require('logger').createLogger('ROUTER_USER');
 const { insertNewUser, updateUser, findUser } = require('handlers/users');
+const { NO_SUCH_USER } = require('errors');
 
 const router = express.Router();
 
@@ -40,6 +41,10 @@ router.delete('/:id', async (req, res, next) => {
 router.get('/:id', async (req, res, next) => {
   try {
     const user = await findUser({ _id: req.params.id });
+
+    if (!user) {
+      throw NO_SUCH_USER;
+    }
 
     res.send(user);
   } catch (err) {

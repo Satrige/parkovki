@@ -20,6 +20,7 @@ const CalendarSchema = mongoose.Schema({
     required: true,
   },
   date: {
+    index: true,
     type: Date,
     required: true,
   },
@@ -42,6 +43,7 @@ const CalendarSchema = mongoose.Schema({
 });
 
 CalendarSchema.index({ email: 1, date: 1 });
+CalendarSchema.index({ date: 1 });
 
 CalendarSchema.methods.toJSON = function () {
   const calendarInfo = this.toObject();

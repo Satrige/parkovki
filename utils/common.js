@@ -39,8 +39,13 @@ const getIn = (obj, props) => {
   return curObj;
 };
 
+const correctDate = date => {
+  const splittedDate = date.split('.');
+  return `${splittedDate[1]}.${splittedDate[0]}.${splittedDate[2]}`;
+};
 
 module.exports = {
   isEmpty,
   getIn,
+  correctDate,
 };

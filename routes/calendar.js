@@ -1,6 +1,12 @@
 const express = require('express');
 const log = require('logger').createLogger('ROUTER_CALENDAR');
-const { insertNewRecord, getRecord, getRecords, updateRecord } = require('handlers/calendar');
+const {
+  insertNewRecord,
+  getRecord,
+  getRecords,
+  updateRecord,
+  uploadRecordsFromFile,
+} = require('handlers/calendar');
 const multipart = require('connect-multiparty');
 const { INTERNAL_ERROR } = require('errors');
 
@@ -51,20 +57,16 @@ router.get('/', async (req, res, next) => {
     res.set('Content-type', 'application/json');
     res.write('[');
 
-    let isFirst = true;
+    let numChunk = 0;
 
     const write = (content) => {
       log.debug('data event', content);
-      if (content && !res.write(`${isFirst ? '' : ','}${JSON.stringify(content)}`)) {
+      if (content && !res.write(`${numChunk++ === 0 ? '' : ','}${JSON.stringify(content)}`)) {
         cursor.removeListener('data', write);
 
         res.once('drain', () => {
           cursor.on('data', write);
         });
-      }
-
-      if (isFirst) {
-        isFirst = false;
       }
     };
 
@@ -100,7 +102,15 @@ router.delete('/:id', async (req, res, next) => {
 router.post('/upload', multipartMiddleware, async (req, res, next) => {
   log.debug('req.files: ', req.files);
 
-  res.end('not yet');
+  try {
+    const wasUploaded = await uploadRecordsFromFile(req.files);
+
+    res.send({ status: 'ok', wasUploaded });
+  } catch (err) {
+    log.error('Error_post_upload_last', err.message);
+
+    next(err);
+  }
 });
 
 module.exports = router;
