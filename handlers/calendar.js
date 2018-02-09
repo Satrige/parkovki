@@ -77,6 +77,29 @@ const getRecord = async (query) => {
   }
 };
 
+const convertParams2Query = params => (Object.assign({
+  date: {
+    $gte: params.from || '01.01.1900',
+    $lte: params.to || '01.01.2100',
+  },
+}, params.email ? { email: params.email } : {}));
+
+const getRecords = async (params) => {
+  const query = convertParams2Query(params);
+
+  log.debug('Debug_getRecords_0', query);
+
+  try {
+    const cursor = calendarModel.Calendar.find(query).cursor();
+
+    return cursor;
+  } catch (err) {
+    log.error('Error_getRecords_0', err.message);
+
+    throw err;
+  }
+};
+
 const updateRecord = async (recordId, recordInfo) => {
   if (!recordId || !recordInfo) {
     log.warn('Warn_updateRecord_0', 'Wrong params', recordId, recordInfo);
@@ -97,6 +120,7 @@ const updateRecord = async (recordId, recordInfo) => {
 module.exports = {
   insertNewRecord,
   getRecord,
+  getRecords,
   updateRecord,
 };
 

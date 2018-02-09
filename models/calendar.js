@@ -1,4 +1,5 @@
 const mongoose = require('storages/mongo').getDb();
+const moment = require('moment');
 const log = require('logger').createLogger('MODEL_CALENDAR');
 const { WORK_HOURS } = require('consts');
 const { CANT_SAVE_NEW_RECORD, CANT_GET_SINGLE_USER_STAT, CANT_UPDATE_RECORD } = require('errors');
@@ -19,7 +20,7 @@ const CalendarSchema = mongoose.Schema({
     required: true,
   },
   date: {
-    type: String,
+    type: Date,
     required: true,
   },
   note: {
@@ -46,6 +47,8 @@ CalendarSchema.methods.toJSON = function () {
   const calendarInfo = this.toObject();
   delete calendarInfo.isDeleted;
   delete calendarInfo.__v;
+
+  calendarInfo.date = moment(calendarInfo.date).format('DD.MM.YYYY');
 
   return calendarInfo;
 };
