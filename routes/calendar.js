@@ -5,6 +5,7 @@ const {
   getRecord,
   getRecords,
   updateRecord,
+  getStat,
   uploadRecordsFromFile,
 } = require('handlers/calendar');
 const multipart = require('connect-multiparty');
@@ -35,6 +36,17 @@ router.put('/:id', async (req, res, next) => {
     res.send({ status: 'ok', wasUpdated });
   } catch (err) {
     log.error('Error_calendar_put_last', err.message);
+    next(err);
+  }
+});
+
+router.get('/stat', async (req, res, next) => {
+  try {
+    const statistics = await getStat(req.query);
+
+    res.send(statistics);
+  } catch (err) {
+    log.error('Error_calendar_delete_last', err.message);
     next(err);
   }
 });
@@ -99,6 +111,7 @@ router.delete('/:id', async (req, res, next) => {
   }
 });
 
+// TODO Dont forget to remove file
 router.post('/upload', multipartMiddleware, async (req, res, next) => {
   log.debug('req.files: ', req.files);
 

@@ -121,17 +121,14 @@ const getRecord = async (query) => {
 
 const convertParams2Query = params => (Object.assign({
   date: {
-    $gte: correctDate(params.from || '01.01.1900'),
-    $lte: correctDate(params.to || '01.01.2100'),
+    $gte: new Date(correctDate(params.from || '01.01.1900')),
+    $lte: new Date(correctDate(params.to || '01.01.2100')),
   },
 }, params.email ? { email: params.email } : {}));
 
 const getRecords = async (params) => {
-  const query = convertParams2Query(params);
-
-  log.debug('Debug_getRecords_0', query);
-
   try {
+    const query = convertParams2Query(params);
     const cursor = calendarModel.Calendar.find(query).sort({ date: 1 }).cursor();
 
     return cursor;
@@ -209,11 +206,60 @@ const uploadRecordsFromFile = (fileInfo) => {
   });
 };
 
+const convertStatParams2Query = (params) => {
+  try {
+    const res = {
+      date: {
+        $gte: new Date(correctDate(params.from || '01.01.1900')),
+        $lte: new Date(correctDate(params.to || '01.01.2100')),
+      },
+    };
+
+    if (params.emails && typeof params.emails === 'string') {
+      const parsedEmails = JSON.parse(params.emails);
+
+      return Object.assign({}, res, {
+        email: { $in: Array.isArray(parsedEmails) ? parsedEmails : [parsedEmails] },
+      });
+    } else if (params.emails) {
+      throw WRONG_PARAMS;
+    } else {
+      return res;
+    }
+  } catch (err) {
+    log.error('Error_convertStatParams2Query_last', 'Cant parse query params: ', params);
+
+    throw WRONG_PARAMS;
+  }
+};
+
+const getStat = async (params) => {
+  if (!params) {
+    log.warn('Warn_getStat_0', 'Wrong params');
+
+    throw WRONG_PARAMS;
+  }
+
+  try {
+    const query = convertStatParams2Query(params);
+    log.debug('query: ', query);
+
+    const res = await calendarModel.getStatistic(query);
+
+    return res;
+  } catch (err) {
+    log.error('Error_getStat_last', err.message);
+
+    throw err;
+  }
+};
+
 module.exports = {
   insertNewRecord,
   getRecord,
   getRecords,
   uploadRecordsFromFile,
+  getStat,
   updateRecord,
 };
 

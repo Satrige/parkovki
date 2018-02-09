@@ -106,10 +106,46 @@ const updateRecord = async (query, newInfo) => {
   }
 };
 
+const getStatistic = async (query) => {
+  try {
+    const res = await Calendar
+      .aggregate([{
+        $match: { ...query, isDeleted: false },
+      }, {
+        $group: {
+          _id: {
+            email: '$email',
+            status: '$status',
+            name: '$name',
+          },
+          hours: { $sum: '$period' },
+        },
+      }, {
+        $group: {
+          _id: '$_id.name',
+          periods: { $push: { status: '$_id.status', days: { $divide: ['$hours', 8] } } },
+        },
+      }, {
+        $project: {
+          _id: 0,
+          name: '$_id',
+          periods: 1,
+        },
+      }]);
+
+    return res;
+  } catch (err) {
+    log.error('Error_getStatistic_last', err.message);
+
+    throw err;
+  }
+};
+
 module.exports = {
   saveNewRecord,
   getSingleUserStat,
   getSingleRecord,
   updateRecord,
+  getStatistic,
   Calendar,
 };
