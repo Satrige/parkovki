@@ -1,3 +1,6 @@
+const fs = require('fs');
+const log = require('logger').createLogger('UTILS_COMMON');
+
 const isEmpty = (inst) => {
   // '', null, 'undefined', o, NaN, false
   if (!inst) {
@@ -39,13 +42,25 @@ const getIn = (obj, props) => {
   return curObj;
 };
 
-const correctDate = date => {
+const correctDate = (date) => {
   const splittedDate = date.split('.');
   return `${splittedDate[1]}.${splittedDate[0]}.${splittedDate[2]}`;
 };
+
+const readFilePromise = (path, encoding) => new Promise((resolve, reject) => {
+  fs.readFile(path, encoding, (err, contents) => {
+    if (err) {
+      log.error('Error_readFilePromise_last', err.message);
+      reject(err);
+    } else {
+      resolve(contents);
+    }
+  });
+});
 
 module.exports = {
   isEmpty,
   getIn,
   correctDate,
+  readFilePromise,
 };

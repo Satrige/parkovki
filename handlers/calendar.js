@@ -1,19 +1,16 @@
 const log = require('logger').createLogger('HANDLERS_CALENDAR');
 const calendarModel = require('models/calendar');
 const { findUser } = require('handlers/users');
-const { WORK_HOURS } = require('consts');
-const fs = require('fs');
+const { WORK_HOURS, NUM_PROCESSED_RECORDS } = require('consts');
 const {
   WRONG_PARAMS,
   NO_SUCH_USER,
   WRONG_PERIOD,
   CANT_ADD_RECORD,
   NO_SUCH_RECORD,
-  CANT_UPLOAD_INFO,
+  NOT_CORRECT_RECORD,
 } = require('errors');
-const { getIn, correctDate } = require('common');
-const JSONStream = require('JSONStream');
-const es = require('event-stream');
+const { getIn, correctDate, readFilePromise } = require('common');
 
 const checkRecord = async (recordInfo, needThrow = false) => {
   try {
@@ -31,7 +28,12 @@ const checkRecord = async (recordInfo, needThrow = false) => {
 
     const workedHours = await calendarModel.getSingleUserStat({
       email: recordInfo.email,
-      date: recordInfo.date,
+      date: new Date(correctDate(recordInfo.date)),
+    });
+
+    log.debug(workedHours, {
+      email: recordInfo.email,
+      date: new Date(correctDate(recordInfo.date)),
     });
 
     if (workedHours + (recordInfo.period || 8) > WORK_HOURS) {
@@ -55,13 +57,16 @@ const correctParams = (newRecord) => {
   const { date } = newRecord;
 
   return Object.assign({}, newRecord, {
-    date: correctDate(date),
+    date: new Date(correctDate(date)),
+    isDeleted: false,
+    note: newRecord.note || '',
+    period: newRecord.period || WORK_HOURS,
+    __v: 0,
   });
 };
 
 const insertNewRecord = async (recordInfo, needThrow = true) => {
   if (!recordInfo) {
-    // TODO Add validation
     log.warn('Warn_insertNewRecord_0', 'Wrong params');
 
     if (needThrow) {
@@ -72,9 +77,18 @@ const insertNewRecord = async (recordInfo, needThrow = true) => {
   }
 
   try {
-    await checkRecord(recordInfo, needThrow);
+    const isCorrectRecord = await checkRecord(recordInfo, needThrow);
 
-    const newRecord = await calendarModel.saveNewRecord(correctParams(recordInfo));
+    if (!isCorrectRecord) {
+      if (needThrow) {
+        throw NOT_CORRECT_RECORD;
+      } else {
+        return null;
+      }
+    }
+
+    const newRecord = needThrow ? await calendarModel.saveNewRecord(correctParams(recordInfo)) :
+      await calendarModel.Calendar.collection.insert(correctParams(recordInfo));
 
     if (!newRecord) {
       if (needThrow) {
@@ -84,9 +98,8 @@ const insertNewRecord = async (recordInfo, needThrow = true) => {
       }
     }
 
-    return newRecord;
+    return newRecord.toJSON ? newRecord.toJSON() : newRecord;
   } catch (err) {
-    console.dir(err);
     log.error('Error_insertNewRecord_last', err.message, recordInfo);
 
     throw err;
@@ -129,6 +142,7 @@ const convertParams2Query = params => (Object.assign({
 const getRecords = async (params) => {
   try {
     const query = convertParams2Query(params);
+    log.debug('query: ', query);
     const cursor = calendarModel.Calendar.find(query).sort({ date: 1 }).cursor();
 
     return cursor;
@@ -156,7 +170,50 @@ const updateRecord = async (recordId, recordInfo) => {
   }
 };
 
-const uploadRecordsFromFile = (fileInfo) => {
+const insertRecords = async (records, from, to) => {
+  const lenRecords = records.length;
+
+  try {
+    const insertedHandlers = [];
+
+    for (let i = from; i < to && i < lenRecords; ++i) {
+      insertedHandlers.push(insertNewRecord(records[i], false));
+    }
+
+    const results = await Promise.all(insertedHandlers);
+
+    return results.filter(result => result !== null).length;
+  } catch (err) {
+    log.error('Error_insertRecords_last', err.message);
+
+    throw err;
+  }
+};
+
+const handleRecords = async (records) => {
+  const lenRecords = records.length;
+  let curNumRecord = 0;
+  let numInserted = 0;
+
+  try {
+    while (curNumRecord < lenRecords) {
+      const lastRecordNumber = curNumRecord + NUM_PROCESSED_RECORDS;
+      numInserted += await insertRecords(records, curNumRecord, lastRecordNumber);
+
+      curNumRecord = lastRecordNumber;
+    }
+
+    log.info('Info_handleRecords_0', 'Number of inserted records: ', numInserted);
+
+    return numInserted;
+  } catch (err) {
+    log.error('Error_handleRecords_last', err.message);
+
+    throw err;
+  }
+};
+
+const uploadRecordsFromFile = async (fileInfo) => {
   const filePath = getIn(fileInfo, ['file', 'path']);
 
   if (!filePath) {
@@ -164,46 +221,19 @@ const uploadRecordsFromFile = (fileInfo) => {
     throw WRONG_PARAMS;
   }
 
-  return new Promise((resolve, reject) => {
-    const file = new fs.ReadStream(filePath, 'utf-8'); // TODO Check headers
-    let numInserted = 0;
-    let wasDestoyed = false;
+  try {
+    // TODO Check headers
+    const recordsStr = await readFilePromise(filePath, 'utf-8');
+    const records = JSON.parse(recordsStr);
 
-    const destroyStreams = () => {
-      if (wasDestoyed) {
-        return;
-      }
+    handleRecords(records);
 
-      wasDestoyed = true;
-      file.unpipe();
-      reject(CANT_UPLOAD_INFO);
-    };
+    return true;
+  } catch (err) {
+    log.error('Error_uploadRecordsFromFile_last', err.message, fileInfo);
 
-    const writerStream = es.mapSync(async (recordInfo) => {
-      try {
-        const res = await insertNewRecord(recordInfo);
-        if (res) {
-          ++numInserted;
-        }
-      } catch (err) {
-        log.error('Error_uploadRecordsFromFile_0', err.message);
-
-        destroyStreams();
-      }
-    });
-
-    const jsonStream = JSONStream.parse('*');
-
-    file
-      .pipe(jsonStream)
-      .pipe(writerStream);
-
-    file.on('error', destroyStreams);
-
-    writerStream.on('end', () => {
-      resolve();
-    });
-  });
+    throw err;
+  }
 };
 
 const convertStatParams2Query = (params) => {

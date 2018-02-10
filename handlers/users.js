@@ -43,8 +43,8 @@ const updateUser = async (userId, userInfo) => {
 };
 
 const findUser = async (query) => {
-  if (!query) {
-    log.warn('Warn_findUser_0', 'Wrong params');
+  if (!query || (!query._id && !query.email)) {
+    log.warn('Warn_findUser_0', 'Wrong params', query);
     throw WRONG_PARAMS;
   }
 

@@ -33,6 +33,7 @@ const CANT_GET_SINGLE_USER_STAT = new CustomError('Cant retrieve hours info', 50
 const NO_SUCH_RECORD = new CustomError('No such record', 404);
 const CANT_UPDATE_RECORD = new CustomError('Cant update record', 500);
 const CANT_UPLOAD_INFO = new CustomError('Cant upload information', 500);
+const NOT_CORRECT_RECORD = new CustomError('Not correct record', 400);
 
 
 const handleMiddlewareErrors = (error) => {
@@ -58,5 +59,6 @@ module.exports = {
   NO_SUCH_RECORD,
   CANT_UPDATE_RECORD,
   CANT_UPLOAD_INFO,
+  NOT_CORRECT_RECORD,
   handleMiddlewareErrors,
 };

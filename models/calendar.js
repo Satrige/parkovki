@@ -122,13 +122,16 @@ const getStatistic = async (query) => {
         },
       }, {
         $group: {
-          _id: '$_id.name',
+          _id: {
+            email: '$_id.email',
+            name: '$_id.name',
+          },
           periods: { $push: { status: '$_id.status', days: { $divide: ['$hours', 8] } } },
         },
       }, {
         $project: {
           _id: 0,
-          name: '$_id',
+          name: '$_id.name',
           periods: 1,
         },
       }]);

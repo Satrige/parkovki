@@ -53,4 +53,19 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
+router.get('/', async (req, res, next) => {
+  try {
+    const user = await findUser({ email: req.query.email });
+
+    if (!user) {
+      throw NO_SUCH_USER;
+    }
+
+    res.send(user);
+  } catch (err) {
+    log.error('Error_user_get_last', err.message);
+    next(err);
+  }
+});
+
 module.exports = router;

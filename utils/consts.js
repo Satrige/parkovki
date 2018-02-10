@@ -1,5 +1,7 @@
 const WORK_HOURS = 8;
+const NUM_PROCESSED_RECORDS = 1000;
 
 module.exports = {
+  NUM_PROCESSED_RECORDS,
   WORK_HOURS,
 };
