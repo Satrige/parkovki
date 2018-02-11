@@ -1,0 +1,12 @@
+{
+  "env": {
+    "mocha": true
+  },
+  "globals": {
+    "expect": true,
+    "stub": true,
+    "restore": true,
+    "initSandbox": true,
+    "mock": true
+  }
+}
