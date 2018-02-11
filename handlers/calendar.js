@@ -212,6 +212,25 @@ const updateRecord = async (recordId, recordInfo) => {
   }
 
   try {
+    if (recordInfo.period) {
+      const processingRecord = await calendarModel.getSingleRecord({ _id: recordId });
+      if (!processingRecord) {
+        log.error('Error_updateRecord_0', 'No record with such id', recordId);
+        throw NO_SUCH_RECORD;
+      }
+
+      const workedHours = await calendarModel.getSingleUserStat({
+        email: processingRecord.email,
+        date: new Date(processingRecord.date),
+      });
+
+      if ((workedHours - processingRecord.period) + recordInfo.period > WORK_HOURS) {
+        log.warn('Error_updateRecord_1', 'Too much work time: ', workedHours, recordInfo, processingRecord);
+
+        throw WRONG_PERIOD;
+      }
+    }
+
     const wasUpdated = await calendarModel.updateRecord({ _id: recordId }, recordInfo);
 
     return wasUpdated;

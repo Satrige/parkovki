@@ -20,7 +20,7 @@ class CustomError {
   }
 }
 
-const INTERNAL_ERROR = new CustomError('Internal_error'); // Smth wrong with code
+const INTERNAL_ERROR = new CustomError('Internal error'); // Smth wrong with code
 const CANT_ADD_USER = new CustomError('Cant add new user to db', 400);
 const CANT_SAVE_USER = new CustomError('Cant save user to db', 500);
 const CANT_UPDATE_USER = new CustomError('Cant update user', 500);
