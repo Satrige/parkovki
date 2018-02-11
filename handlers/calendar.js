@@ -16,6 +16,7 @@ const {
   CANT_ADD_RECORD,
   NO_SUCH_RECORD,
   NOT_CORRECT_RECORD,
+  CANT_CHANGE_RESTRICTED_PARAMS,
 } = require('errors');
 const {
   getIn,
@@ -209,6 +210,11 @@ const updateRecord = async (recordId, recordInfo) => {
   if (!recordId || !recordInfo) {
     log.warn('Warn_updateRecord_0', 'Wrong params', recordId, recordInfo);
     throw WRONG_PARAMS;
+  }
+
+  if (recordInfo.email || recordInfo.date) {
+    log.warn('Warn_updateRecord_0', 'Try to change restricted fields', recordId, recordInfo);
+    throw CANT_CHANGE_RESTRICTED_PARAMS;
   }
 
   try {

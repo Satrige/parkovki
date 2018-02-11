@@ -34,7 +34,7 @@ const NO_SUCH_RECORD = new CustomError('No such record', 404);
 const CANT_UPDATE_RECORD = new CustomError('Cant update record', 500);
 const CANT_UPLOAD_INFO = new CustomError('Cant upload information', 500);
 const NOT_CORRECT_RECORD = new CustomError('Not correct record', 400);
-
+const CANT_CHANGE_RESTRICTED_PARAMS = new CustomError('Cant change restricted parameters', 400);
 
 const handleMiddlewareErrors = (error) => {
   if (error.isCustom) {
@@ -60,5 +60,6 @@ module.exports = {
   CANT_UPDATE_RECORD,
   CANT_UPLOAD_INFO,
   NOT_CORRECT_RECORD,
+  CANT_CHANGE_RESTRICTED_PARAMS,
   handleMiddlewareErrors,
 };
