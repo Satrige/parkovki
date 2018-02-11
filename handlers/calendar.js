@@ -185,12 +185,32 @@ const getRecord = async (query) => {
   }
 };
 
-const convertParams2Query = params => (Object.assign({
-  date: {
-    $gte: new Date(correctDate(params.from || MIN_DATE)),
-    $lte: new Date(correctDate(params.to || MAX_DATE)),
-  },
-}, params.email ? { email: params.email } : {}));
+const convertParams2Query = (params) => {
+  try {
+    const res = {
+      date: {
+        $gte: new Date(correctDate(params.from || MIN_DATE)),
+        $lte: new Date(correctDate(params.to || MAX_DATE)),
+      },
+    };
+
+    if (params.emails && typeof params.emails === 'string') {
+      const parsedEmails = JSON.parse(params.emails);
+
+      return Object.assign({}, res, {
+        email: { $in: Array.isArray(parsedEmails) ? parsedEmails : [parsedEmails] },
+      });
+    } else if (params.emails) {
+      throw WRONG_PARAMS;
+    } else {
+      return res;
+    }
+  } catch (err) {
+    log.error('Error_convertStatParams2Query_last', 'Cant parse query params: ', params);
+
+    throw WRONG_PARAMS;
+  }
+};
 
 const getRecords = async (params) => {
   try {
@@ -313,33 +333,6 @@ const uploadRecordsFromFile = async (fileInfo, needToCheck) => {
   }
 };
 
-const convertStatParams2Query = (params) => {
-  try {
-    const res = {
-      date: {
-        $gte: new Date(correctDate(params.from || MIN_DATE)),
-        $lte: new Date(correctDate(params.to || MAX_DATE)),
-      },
-    };
-
-    if (params.emails && typeof params.emails === 'string') {
-      const parsedEmails = JSON.parse(params.emails);
-
-      return Object.assign({}, res, {
-        email: { $in: Array.isArray(parsedEmails) ? parsedEmails : [parsedEmails] },
-      });
-    } else if (params.emails) {
-      throw WRONG_PARAMS;
-    } else {
-      return res;
-    }
-  } catch (err) {
-    log.error('Error_convertStatParams2Query_last', 'Cant parse query params: ', params);
-
-    throw WRONG_PARAMS;
-  }
-};
-
 const getStat = async (params) => {
   if (!params) {
     log.warn('Warn_getStat_0', 'Wrong params');
@@ -348,7 +341,7 @@ const getStat = async (params) => {
   }
 
   try {
-    const query = convertStatParams2Query(params);
+    const query = convertParams2Query(params);
     log.debug('query: ', query);
 
     const res = await calendarModel.getStatistic(query);
