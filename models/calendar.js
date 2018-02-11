@@ -132,6 +132,7 @@ const getStatistic = async (query) => {
         $project: {
           _id: 0,
           name: '$_id.name',
+          email: '$_id.email',
           periods: 1,
         },
       }]);

@@ -88,4 +88,72 @@ describe('handlers: calendar', () => {
         .to.eventually.be.deep.equal(expected.result);
     });
   });
+
+  describe('getStat', () => {
+    it('should resolve with correct statistic', async () => {
+      const test = {
+        params: {
+          from: '31.12.1979',
+          to: '31.12.1989',
+          emails: JSON.stringify(['test1@test.test', 'test2@test.test']),
+        },
+        getStatisticOutput: [{
+          name: 'Ivan Smirnov',
+          email: 'test1@test.test',
+          pediods: [{
+            status: 'work',
+            days: 10,
+          }],
+        }, {
+          name: 'Ivan Smirnov',
+          email: 'test2@test.test',
+          pediods: [{
+            status: 'work',
+            days: 10,
+          }],
+        }],
+      };
+
+      const expected = {
+        result: [{
+          name: 'Ivan Smirnov',
+          email: 'test1@test.test',
+          pediods: [{
+            status: 'work',
+            days: 10,
+          }],
+        }, {
+          name: 'Ivan Smirnov',
+          email: 'test2@test.test',
+          pediods: [{
+            status: 'work',
+            days: 10,
+          }],
+        }],
+        getStatisticInput: {
+          date: {
+            $gte: new Date('12.31.1979'),
+            $lte: new Date('12.31.1989'),
+          },
+          email: {
+            $in: ['test1@test.test', 'test2@test.test'],
+          },
+        },
+      };
+
+      const calendarHandler = proxyquire('handlers/calendar', {
+        'models/calendar': {
+          getStatistic: async (query) => {
+            expect(query).to.be.deep.equal(expected.getStatisticInput);
+
+            return test.getStatisticOutput;
+          },
+        },
+        'handlers/users': {},
+      });
+
+      await expect(calendarHandler.getStat(test.params))
+        .to.eventually.be.deep.equal(expected.result);
+    });
+  });
 });
