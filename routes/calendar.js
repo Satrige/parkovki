@@ -20,7 +20,7 @@ const multipartMiddleware = multipart({
 
 router.post('/', async (req, res, next) => {
   try {
-    const newRecord = await insertNewRecord(req.body);
+    const newRecord = await insertNewRecord(req.body, true, req.query.check !== 'false');
 
     res.send(newRecord);
   } catch (err) {
@@ -111,12 +111,10 @@ router.delete('/:id', async (req, res, next) => {
   }
 });
 
-// TODO Dont forget to remove file
 router.post('/upload', multipartMiddleware, async (req, res, next) => {
   log.debug('req.files: ', req.files);
-
   try {
-    const wasUploaded = await uploadRecordsFromFile(req.files);
+    const wasUploaded = await uploadRecordsFromFile(req.files, req.query.check === 'true');
 
     res.send({ status: 'ok', wasUploaded });
   } catch (err) {

@@ -1,7 +1,7 @@
 const mongoose = require('storages/mongo').getDb();
 const moment = require('moment');
 const log = require('logger').createLogger('MODEL_CALENDAR');
-const { WORK_HOURS } = require('consts');
+const { WORK_HOURS, AVAL_STATUSES } = require('consts');
 const { CANT_SAVE_NEW_RECORD, CANT_GET_SINGLE_USER_STAT, CANT_UPDATE_RECORD } = require('errors');
 const { getIn } = require('common');
 
@@ -30,7 +30,7 @@ const CalendarSchema = mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['sick', 'vacation', 'remoteWork', 'work'],
+    enum: AVAL_STATUSES,
     default: 'work',
   },
   period: {

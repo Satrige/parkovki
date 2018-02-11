@@ -58,9 +58,21 @@ const readFilePromise = (path, encoding) => new Promise((resolve, reject) => {
   });
 });
 
+const validateEmail = (email) => {
+  const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return re.test(String(email).toLowerCase());
+};
+
+const validateDate = (date) => {
+  const re = /^(0[1-9]|[12]\d|3[01]).(0[1-9]|1[0-2]).[12]\d{3}$/;
+  return re.test(date);
+};
+
 module.exports = {
   isEmpty,
   getIn,
   correctDate,
+  validateEmail,
+  validateDate,
   readFilePromise,
 };

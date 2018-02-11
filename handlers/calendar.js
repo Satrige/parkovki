@@ -1,7 +1,14 @@
+const fs = require('fs');
 const log = require('logger').createLogger('HANDLERS_CALENDAR');
 const calendarModel = require('models/calendar');
 const { findUser } = require('handlers/users');
-const { WORK_HOURS, NUM_PROCESSED_RECORDS } = require('consts');
+const {
+  WORK_HOURS,
+  NUM_PROCESSED_RECORDS,
+  AVAL_STATUSES,
+  MIN_DATE,
+  MAX_DATE,
+} = require('consts');
 const {
   WRONG_PARAMS,
   NO_SUCH_USER,
@@ -10,19 +17,64 @@ const {
   NO_SUCH_RECORD,
   NOT_CORRECT_RECORD,
 } = require('errors');
-const { getIn, correctDate, readFilePromise } = require('common');
+const {
+  getIn,
+  correctDate,
+  readFilePromise,
+  validateEmail,
+  validateDate,
+} = require('common');
 
-const checkRecord = async (recordInfo, needThrow = false) => {
+const checkInputParams = (params) => {
+  const {
+    email,
+    status,
+    name,
+    date,
+    period,
+  } = params;
+
+  if (!email || !validateEmail(email)) {
+    log.warn('Warn_checkInputParams_0', 'Wrong email', params);
+    return false;
+  }
+
+  if (!status || !AVAL_STATUSES.includes(status)) {
+    log.warn('Warn_checkInputParams_1', 'Wrong status', params);
+    return false;
+  }
+
+  if (!name || typeof name !== 'string') {
+    log.warn('Warn_checkInputParams_2', 'Wrong name', params);
+    return false;
+  }
+
+  if (!date || typeof date !== 'string' || !validateDate(date)) {
+    log.warn('Warn_checkInputParams_3', 'Wrong date', params);
+    return false;
+  }
+
+  if (period && (typeof period !== 'number' || period < 0 || period > 8)) {
+    log.warn('Warn_checkInputParams_4', 'Wrong period', params);
+    return false;
+  }
+
+  return true;
+};
+
+const checkRecord = async (recordInfo, needThrow = false, needToCheckUser = true) => {
   try {
-    const user = await findUser({ email: recordInfo.email });
+    if (needToCheckUser) {
+      const user = await findUser({ email: recordInfo.email });
 
-    if (false) { // !user) {
-      log.warn('Warn_checkRecord_0', 'No user with such email: ', recordInfo);
+      if (!user) {
+        log.warn('Warn_checkRecord_0', 'No user with such email: ', recordInfo);
 
-      if (needThrow) {
-        throw NO_SUCH_USER;
-      } else {
-        return false;
+        if (needThrow) {
+          throw NO_SUCH_USER;
+        } else {
+          return false;
+        }
       }
     }
 
@@ -65,8 +117,8 @@ const correctParams = (newRecord) => {
   });
 };
 
-const insertNewRecord = async (recordInfo, needThrow = true) => {
-  if (!recordInfo) {
+const insertNewRecord = async (recordInfo, needThrow = true, needToCheckUser = true) => {
+  if (!recordInfo || !checkInputParams(recordInfo)) {
     log.warn('Warn_insertNewRecord_0', 'Wrong params');
 
     if (needThrow) {
@@ -77,7 +129,7 @@ const insertNewRecord = async (recordInfo, needThrow = true) => {
   }
 
   try {
-    const isCorrectRecord = await checkRecord(recordInfo, needThrow);
+    const isCorrectRecord = await checkRecord(recordInfo, needThrow, needToCheckUser);
 
     if (!isCorrectRecord) {
       if (needThrow) {
@@ -98,7 +150,7 @@ const insertNewRecord = async (recordInfo, needThrow = true) => {
       }
     }
 
-    return newRecord.toJSON ? newRecord.toJSON() : newRecord;
+    return newRecord.toJSON ? newRecord.toJSON() : newRecord.insertedCount;
   } catch (err) {
     log.error('Error_insertNewRecord_last', err.message, recordInfo);
 
@@ -134,8 +186,8 @@ const getRecord = async (query) => {
 
 const convertParams2Query = params => (Object.assign({
   date: {
-    $gte: new Date(correctDate(params.from || '01.01.1900')),
-    $lte: new Date(correctDate(params.to || '01.01.2100')),
+    $gte: new Date(correctDate(params.from || MIN_DATE)),
+    $lte: new Date(correctDate(params.to || MAX_DATE)),
   },
 }, params.email ? { email: params.email } : {}));
 
@@ -170,14 +222,14 @@ const updateRecord = async (recordId, recordInfo) => {
   }
 };
 
-const insertRecords = async (records, from, to) => {
+const insertRecords = async (records, from, to, needToCheck = false) => {
   const lenRecords = records.length;
 
   try {
     const insertedHandlers = [];
 
     for (let i = from; i < to && i < lenRecords; ++i) {
-      insertedHandlers.push(insertNewRecord(records[i], false));
+      insertedHandlers.push(insertNewRecord(records[i], false, needToCheck));
     }
 
     const results = await Promise.all(insertedHandlers);
@@ -190,7 +242,7 @@ const insertRecords = async (records, from, to) => {
   }
 };
 
-const handleRecords = async (records) => {
+const handleRecords = async (records, needToCheck = false) => {
   const lenRecords = records.length;
   let curNumRecord = 0;
   let numInserted = 0;
@@ -198,7 +250,7 @@ const handleRecords = async (records) => {
   try {
     while (curNumRecord < lenRecords) {
       const lastRecordNumber = curNumRecord + NUM_PROCESSED_RECORDS;
-      numInserted += await insertRecords(records, curNumRecord, lastRecordNumber);
+      numInserted += await insertRecords(records, curNumRecord, lastRecordNumber, needToCheck);
 
       curNumRecord = lastRecordNumber;
     }
@@ -213,7 +265,7 @@ const handleRecords = async (records) => {
   }
 };
 
-const uploadRecordsFromFile = async (fileInfo) => {
+const uploadRecordsFromFile = async (fileInfo, needToCheck) => {
   const filePath = getIn(fileInfo, ['file', 'path']);
 
   if (!filePath) {
@@ -222,11 +274,11 @@ const uploadRecordsFromFile = async (fileInfo) => {
   }
 
   try {
-    // TODO Check headers
     const recordsStr = await readFilePromise(filePath, 'utf-8');
     const records = JSON.parse(recordsStr);
 
-    handleRecords(records);
+    handleRecords(records, needToCheck);
+    fs.unlink(filePath);
 
     return true;
   } catch (err) {
@@ -240,8 +292,8 @@ const convertStatParams2Query = (params) => {
   try {
     const res = {
       date: {
-        $gte: new Date(correctDate(params.from || '01.01.1900')),
-        $lte: new Date(correctDate(params.to || '01.01.2100')),
+        $gte: new Date(correctDate(params.from || MIN_DATE)),
+        $lte: new Date(correctDate(params.to || MAX_DATE)),
       },
     };
 
